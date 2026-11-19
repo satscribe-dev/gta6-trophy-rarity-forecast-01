@@ -55,6 +55,12 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
   practice). That estimate is assumption-driven, not measured.
 - **Backtest BT2** (multi-snapshot fitter, snapshot 1 -> snapshot 2, real
   time split): pending a second live snapshot; see research notes.
+- **Simulation SIMFINAL** (structural, final shape: cut t=48 h, target t=168 h,
+  13 refresh snapshots, rates from an earner-growth model): **mine 0.145**
+  vs house curve 0.293 vs house baseline 0.403 vs persistence 0.759.
+  v1 LOST this sim (0.385 vs 0.372) by extrapolating the early rise linearly;
+  v2 (8 h half-life + soft cap on the move) fixed the overshoot. The sim's
+  dynamics are assumptions, so this validates mechanics, not real levels.
 
 ## Research notes (not part of the entry)
 

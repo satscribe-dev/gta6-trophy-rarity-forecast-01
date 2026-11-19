@@ -42,8 +42,11 @@ LAUNCH0 = datetime(2026, 11, 19, 0, 0, 0, tzinfo=timezone.utc)
 
 # --- tunables (calibrated on the launch-night -> 19 Nov 15:12Z live snapshot;
 #     see research notes; the final history is rich, so these are priors) ---
-HALFLIFE_H = 12.0      # recency half-life for the per-trophy line fit
+HALFLIFE_H = 8.0       # recency half-life for the per-trophy line fit: in launch
+                       # week the regime turns fast, so the last ~day dominates
 SLOPE_PRIOR_SD = 0.40  # logit per unit u: shrinkage strength toward pooled slope
+SOFT_CAP_M = 2.0       # soft cap on the extrapolated move: rates saturate
+                       # (a line in u does not), so compress large moves
 MAX_MOVE_UP = 3.0      # cap on upward |logit move| from last rate
 MAX_MOVE_DOWN = 1.6    # cap on downward move: the launch-night dilution
                        # (-2.9 logit in 15 h) was a one-off N explosion; from
@@ -180,17 +183,18 @@ def forecast_case(case):
 
     # --- rich history: per-trophy line in u, shrunk toward pooled slope --
     t_last = snaps[-1][0]
-    # refresh jump size: pooled median |logit change| between snapshots
+    # refresh jump size: pooled median |logit change| between snapshots.
+    # Use recent jumps only (last 36 h): the launch-night explosion jump is
+    # stale information for the spread at the deadline.
     jumps = []
-    gaps = []
     for k in range(1, len(snaps)):
-        gaps.append(max(snaps[k][0] - snaps[k - 1][0], 0.25))
+        if snaps[k][0] < t_last - 36.0 and len(snaps) > 3:
+            continue
         for i in range(n_tr):
             r0, r1 = snaps[k - 1][2][i], snaps[k][2][i]
             if r0 is not None and r1 is not None:
                 jumps.append(abs(logit(r1) - logit(r0)))
     jump = median(jumps) if jumps else 0.30
-    gap_med = median(gaps) if gaps else 6.0
 
     fits = []  # per trophy: (b, se_b, resid, y_last, u_wmean, y_wmean, npts, u_range)
     slopes = []
@@ -244,8 +248,11 @@ def forecast_case(case):
             # should not be trusted 2+ u-units out
             if du > DAMP_U:
                 y_hat = ym + (y_hat - ym) * (DAMP_U / du)
-            # asymmetric cap on the total move from the last rate
-            y_hat = y_last + clamp(y_hat - y_last, -MAX_MOVE_DOWN, MAX_MOVE_UP)
+            # soft-cap the move (rates saturate; a line in u does not),
+            # then apply the asymmetric hard caps
+            move = y_hat - y_last
+            move = move / (1.0 + abs(move) / SOFT_CAP_M)
+            y_hat = y_last + clamp(move, -MAX_MOVE_DOWN, MAX_MOVE_UP)
             med_logit = clamp(y_hat, LOGIT_MIN, LOGIT_MAX)
             # predictive spread: fit residual + slope uncertainty over the
             # extrapolation + one refresh jump + small-count noise
