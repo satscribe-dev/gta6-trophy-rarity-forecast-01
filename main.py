@@ -58,6 +58,10 @@ SLOPE_SE_2PT = 0.60    # default slope s.e. when only 2 snapshots exist
                        # is unknown, not infinite: keep per-trophy signal)
 RESID_FLOOR = 0.15     # floor on per-trophy residual sd (logit)
 RESID_CAP = 0.80
+JUMP_CAP = 1.0       # cap on the per-refresh jump used for the spread: the
+                     # launch-night explosion jump (~2.9 logit) was a one-off
+                     # tracked-count explosion; once N growth has slowed, a
+                     # single refresh cannot plausibly move rates that far
 SPREAD_FLOOR = 0.45    # floor on total predictive spread (logit)
 SPREAD_CAP = 2.20
 FLAT_SPREAD = 0.60     # spread when history is a single snapshot
@@ -196,7 +200,7 @@ def forecast_case(case):
             r0, r1 = snaps[k - 1][2][i], snaps[k][2][i]
             if r0 is not None and r1 is not None:
                 jumps.append(abs(logit(r1) - logit(r0)))
-    jump = median(jumps) if jumps else 0.30
+    jump = min(median(jumps), JUMP_CAP) if jumps else 0.30
 
     fits = []  # per trophy: (b, se_b, resid, y_last, u_wmean, y_wmean, npts, u_range)
     slopes = []
