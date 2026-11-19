@@ -166,7 +166,9 @@ def forecast_case(case):
         # rate is expected to fall by that growth factor over the horizon.
         t_snap = snaps[0][0] if snaps else 0.0
         growth = math.log1p(target_t) - math.log1p(t_snap)
-        shift = -growth  # ln(rate ratio) under pure dilution
+        # pure dilution; cap it: over a long horizon earners grow too, and
+        # the largest dilution ever observed (launch night) was ~-3.2 logit
+        shift = max(-growth, -3.5)  # ln(rate ratio) under pure dilution
         spread = max(FLAT_SPREAD, 0.5 * math.sqrt(horizon_days))
         for i, tr in enumerate(trophies):
             r = last_rates[i]
