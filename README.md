@@ -16,6 +16,9 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
 1. **Collapse history into distinct Exophase snapshots.** Consecutive identical
    reads are one refresh state, not new information. Exophase refreshes on its
    own schedule; a read only shows the rates as of the last refresh before it.
+   The launch-night snapshot is then dropped: its rates are a different regime
+   (N=638 early players, pre-dilution), and the jump to the first refresh is a
+   one-off level shift, not a trend to extrapolate.
 2. **Rich history (>= 2 snapshots):** per trophy, a recency-weighted
    (12 h half-life) least-squares line of logit(rate) on `u`, slope shrunk
    toward the pooled slope across trophies. Extrapolate to the target with
@@ -28,8 +31,9 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
    to fall by that growth factor; spread is widened because the next refresh
    is unseen. (Near-)100% trophies stay ~100%.
 4. **Spread:** predictive logit SD from fit residual + slope uncertainty over
-   the extrapolation + refresh jump size + small-count noise, floored at 0.45
-   and capped at 2.2. Quantiles are median +/- normal z-scores times the
+   the extrapolation + refresh jump size (per-refresh jump capped at 1.0 logit:
+   the launch-night explosion jump of ~2.9 was a one-off) + small-count noise,
+   floored at 0.45 and capped at 2.2. Quantiles are median +/- normal z-scores times the
    spread: pinball loss is a proper scoring rule, so the quantiles written
    are the ones actually believed.
 5. Any error falls back to the house persistence baseline, so a case is never
@@ -53,14 +57,23 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
   and the 04:30Z refresh except fishing (~100%), the estimate is ~0.16-0.17
   vs the starter's ~1.69 (RULES states the starter scores ~1.51 on the real
   practice). That estimate is assumption-driven, not measured.
-- **Backtest BT2** (multi-snapshot fitter, snapshot 1 -> snapshot 2, real
-  time split): pending a second live snapshot; see research notes.
+- **Backtest BT2a** (multi-snapshot fitter, snapshot 1 -> live snapshot 17:13Z,
+  121 min, NO refresh in between — the page was frozen): v2.3 **loss 0.175**
+  vs house baseline **0.029** and persistence 0.000. Still loses: when nothing
+  changes, any honest spread pays pinball and persistence wins by construction.
+  The fix halved the damage (v2.1: 0.404 -> v2.2 cap: 0.204 -> v2.3: 0.175) by
+  killing the spread explosion; the remainder is the insurance cost of a spread
+  that pays off when a refresh DOES hit (see BT1: narrow-spread persistence
+  scores 2.366 there). Chasing BT2a to 0.029 would mean betting the final has
+  no refreshes — contradicted by the refreshes at 04:30Z and pre-15:12Z — so
+  no further BT2a-targeted tweak; BT2b (post-real-refresh) is the next signal.
+- **Backtest BT2b** (multi-snapshot fitter, real refresh): pending — worker wakes ~02:51 WIB 20 Nov for snapshot 2.
 - **Simulation SIMFINAL** (structural, final shape: cut t=48 h, target t=168 h,
-  13 refresh snapshots, rates from an earner-growth model): **mine 0.145**
-  vs house curve 0.293 vs house baseline 0.403 vs persistence 0.759.
-  v1 LOST this sim (0.385 vs 0.372) by extrapolating the early rise linearly;
-  v2 (8 h half-life + soft cap on the move) fixed the overshoot. The sim's
-  dynamics are assumptions, so this validates mechanics, not real levels.
+  13 refresh snapshots, rates from an earner-growth model): **mine v2.3 0.118**
+  vs house curve 0.293 vs house baseline 0.403 vs persistence 0.759
+  (v2.2: 0.145; v2: 0.145; v1 LOST at 0.385). Dropping the launch snapshot from
+  the fit cut typical miss 1.91 -> 1.07 pp. The sim's dynamics are assumptions,
+  so this validates mechanics, not real levels.
 
 ## Research notes (not part of the entry)
 
