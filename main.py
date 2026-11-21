@@ -160,11 +160,14 @@ def forecast_case(case):
     u_target = math.log1p(target_t)
     horizon_days = case["horizon_minutes"] / 1440.0
     snaps = distinct_snapshots(case)
-    # Drop the launch-night snapshot: its rates are a different regime
-    # (N=638 early players, pre-dilution); the jump to the first refresh is
-    # a one-off level shift, not a trend to extrapolate. With 2 snapshots
-    # this leaves 1, i.e. the flat-history dilution path.
-    if len(snaps) >= 2:
+    # Drop the launch-night snapshot, but ONLY when enough snapshots
+    # remain (>= 3) to still identify a trend. Its rates are a different
+    # regime (N=638 early players, pre-dilution); the jump to the first
+    # refresh is a one-off level shift, not a trend to extrapolate. With
+    # only 2 snapshots the launch snapshot is load-bearing: dropping it
+    # collapses to the flat path, which is catastrophic when trophies
+    # diverge (BT2b: 0.98 vs 0.72 without the drop).
+    if len(snaps) >= 4:
         snaps = snaps[1:]
     last_rates = list(snaps[-1][2]) if snaps else [None] * n_tr
 

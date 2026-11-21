@@ -16,9 +16,12 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
 1. **Collapse history into distinct Exophase snapshots.** Consecutive identical
    reads are one refresh state, not new information. Exophase refreshes on its
    own schedule; a read only shows the rates as of the last refresh before it.
-   The launch-night snapshot is then dropped: its rates are a different regime
-   (N=638 early players, pre-dilution), and the jump to the first refresh is a
-   one-off level shift, not a trend to extrapolate.
+   The launch-night snapshot is then dropped — but only when >= 3 snapshots
+   remain to still identify a trend: its rates are a different regime (N=638
+   early players, pre-dilution), and the jump to the first refresh is a one-off
+   level shift, not a trend to extrapolate. With only 2 snapshots the launch
+   snapshot is load-bearing (dropping it collapses to the flat path, which
+   scored 0.98 on BT2b vs 0.72 with it kept).
 2. **Rich history (>= 2 snapshots):** per trophy, a recency-weighted
    (12 h half-life) least-squares line of logit(rate) on `u`, slope shrunk
    toward the pooled slope across trophies. Extrapolate to the target with
@@ -58,22 +61,35 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
   vs the starter's ~1.69 (RULES states the starter scores ~1.51 on the real
   practice). That estimate is assumption-driven, not measured.
 - **Backtest BT2a** (multi-snapshot fitter, snapshot 1 -> live snapshot 17:13Z,
-  121 min, NO refresh in between — the page was frozen): v2.3 **loss 0.175**
+  121 min, NO refresh in between — the page was frozen): v2.4 **loss 0.204**
   vs house baseline **0.029** and persistence 0.000. Still loses: when nothing
   changes, any honest spread pays pinball and persistence wins by construction.
-  The fix halved the damage (v2.1: 0.404 -> v2.2 cap: 0.204 -> v2.3: 0.175) by
-  killing the spread explosion; the remainder is the insurance cost of a spread
-  that pays off when a refresh DOES hit (see BT1: narrow-spread persistence
-  scores 2.366 there). Chasing BT2a to 0.029 would mean betting the final has
-  no refreshes — contradicted by the refreshes at 04:30Z and pre-15:12Z — so
-  no further BT2a-targeted tweak; BT2b (post-real-refresh) is the next signal.
-- **Backtest BT2b** (multi-snapshot fitter, real refresh): pending — worker wakes ~02:51 WIB 20 Nov for snapshot 2.
+  The fixes halved the damage (v2.1: 0.404 -> v2.2 cap: 0.204); the remainder
+  is the insurance cost of a spread that pays off when a refresh DOES hit
+  (see BT1: narrow-spread persistence scores 2.366 there). Chasing BT2a to
+  0.029 would mean betting the final has no refreshes — contradicted by the
+  refreshes at 04:30Z and pre-15:12Z — so no further BT2a-targeted tweak.
+- **Backtest BT2b + BT3 (REAL long-horizon, the closest thing to the final):**
+  live snapshot 21 Nov 06:19Z (first refresh since 15:12Z 19 Nov — Ch1
+  0.73->18.02%, Beat Cal 1.89->16.73%, Breakfast Run 0.24->7.98%; N fitted
+  ~1M). BT2b = checkpoint 15:12Z, horizon 39.1 h; BT3 = checkpoint 17:13Z,
+  horizon 37.1 h; history = launch + snapshot 1 (+ snapshot 17:13Z, identical
+  rates). **v2.4: BT2b 0.721 / BT3 0.721** vs house baseline 0.830/0.837,
+  house curve 0.714/0.731, persistence 1.201. v2.4 beats the baseline on both
+  and the house curve on BT3 (ties it on BT2b). NOTE: v2.3 (unconditional
+  drop) scored 0.978/0.983 here — it LOSES to the baseline: with only 2
+  distinct snapshots the drop collapses to the flat dilution path, which is
+  catastrophic when trophies diverge (risers vs diluters). v2.4's conditional
+  drop (only when >= 3 snapshots remain) keeps the SIMFINAL gain without the
+  BT2b catastrophe. v2.1 scored 0.697 on both (widest spread covers the huge
+  moves best) — the JUMP_CAP costs ~0.024 here but buys 0.20 on BT2a and is
+  neutral on SIMFINAL; kept.
 - **Simulation SIMFINAL** (structural, final shape: cut t=48 h, target t=168 h,
-  13 refresh snapshots, rates from an earner-growth model): **mine v2.3 0.118**
+  13 refresh snapshots, rates from an earner-growth model): **mine v2.4 0.118**
   vs house curve 0.293 vs house baseline 0.403 vs persistence 0.759
   (v2.2: 0.145; v2: 0.145; v1 LOST at 0.385). Dropping the launch snapshot from
-  the fit cut typical miss 1.91 -> 1.07 pp. The sim's dynamics are assumptions,
-  so this validates mechanics, not real levels.
+  the fit (when history is rich) cut typical miss 1.91 -> 1.07 pp. The sim's
+  dynamics are assumptions, so this validates mechanics, not real levels.
 
 ## Research notes (not part of the entry)
 
