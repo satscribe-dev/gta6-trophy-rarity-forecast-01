@@ -119,3 +119,22 @@ Riset: ~/workspace/makefun/gta6-trophy-rarity-forecast-01-research/ (NOTES.md, s
 ## Status 21 Nov ~18:10 WIB
 - HELD. Kandidat v2.5 @ 365c5f3, bundle + check lokal lolos. JANGAN submit tanpa kata "submit" dari Bos.
 - Deadline entri 21 Nov 18:30 WIB (~20 menit lagi). Kalau Bos memerintahkan submit: (1) unduh kit level 33 + bundle + check ulang; (2) cek kuota segar; (3) submit via kit CLI sebelum 18:30 WIB.
+
+## v2.6 — catch-up simetris, DITOLAK (chat ini, perintah dashboard Bos cmd 11, 16:48 WIB "Tweak lagi su")
+- Aturan dibaca ulang, lanjut dari Status 21 Nov ~18:10 WIB.
+- Riset dulu (#29): reproduksi v2.5 — BT1 0.3243 / BT2a 0.1974 / BT2b 0.5690 / BT3 0.5714 / SIMFINAL 0.1179. Diagnosa residu v2.5 di BT2b/BT3 (skrip ~/workspace/makefun/scratch/diag_v25.py): tercile dilusi bawah (18 trofi) mean signed miss MASIH +1.60 logit, mean loss 1.06 — koreksi catch-up belum cukup di sana; tercile atas mean miss -0.43 (model ketinggian), mean loss 0.31; tercile tengah +0.02. Top-6 loss semuanya miss positif +2.5..+3.5 (mis. #46 +3.51, #4 +3.41, #8 +3.39) — dan mereka BUKAN cap-bound (adj mereka 0.5-0.9, cuma #3 Ch1 yang kena cap 1.5) — sinyal dilusi tidak menjelaskan peloncat terbesar.
+- Kontrafaktual (dari kuantil output v2.5 — lihat catatan keandalan di bawah): simetris K=1.0 -> 0.546/0.549 (-0.023); spread x1.25 -> 0.535/0.537 (-0.034); cap 2.0/2.5 -> 0.551/0.554 (-0.018); anchor-last (buang gerak WLS) -> 0.602/0.603, LEBIH BURUK — gerak WLS informatif, jangan dibuang. Spread x1.25 di BT2a malah +0.029 (0.197->0.227), BT1 +0.013, SIMFINAL +0.020 — GAGAL guard, ditolak sebagai tuas (asuransi spread dibayar BT2a/SIMFINAL).
+- CATATAN KEANDALAN: kontrafaktual dari kuantil output MELEBIHI gain aslinya — spread tersirat dari q05/q95 diremehkan untuk trofi lantai (q05 kena clamp 0.01%), jadi kuantil hasil rebuild lebih sempit dari model. Hanya eksperimen nyata yang dipercaya.
+- EKSPERIMEN NYATA v2.6 (SATU perubahan: hapus max(...,0) di adj catch-up — adj = K*(D_MED - d_i)*g, clamp +-1.5; file ~/workspace/makefun/scratch/main_v26_sym.py): BT1 0.3243 tetap, BT2a 0.1979 (+0.0005), BT2b 0.5629 (-0.006), BT3 0.5654 (-0.006), SIMFINAL 0.1179 tetap, practice byte-identik (2783/2782 B).
+- Aturan terima pra-registrasi (sama seperti ronde v2.5): BT2b >=0.03 DAN BT3 >=0.03 DAN SIMFINAL regresi <=0.02 DAN BT1 tetap DAN BT2a regresi <=0.02. Hasil -0.006 < 0.03 → **DITOLAK, TIDAK DI-COMMIT** (#32b). Kandidat tetap v2.5 @ 365c5f3. Sinyal dilusi dua-arah itu nyata tapi ukurannya ~0.006 — nyaris habis pada resolusi ini; gain lebih lanjut butuh sinyal lain (mis. pisah earners vs N) atau data refresh baru.
+- INSIDEN: /tmp tmpfs 512M PENUH 100% (scratch refresh panel 165+164+85M) — heredoc gagal "No space left on device". Semua skrip eksperimen pindah ke ~/workspace/makefun/scratch/ (disk home 85G bebas). Pelajaran: jangan taruh file kerja di /tmp.
+- Kuota segar (status --competition, 21 Nov ~16:52 WIB): entries_made 0, **can_submit TRUE**, day cap 6/6 (reset 22 Nov 00:00Z), hard limit 40/40. Kit level 32 vs situs 33 — sebelum submit wajib kit 33 + bundle + check ulang (#12b). TIDAK submit.
+
+## Judge lokal kejam — update pasca-v2.6 (skill sama)
+- Binary: format+determinisme PASS | BT1 PASS | SIMFINAL PASS | BT2b/BT3 PASS vs baseline DAN house curve (v2.5) | BT2a FAIL (setting jebakan) | bukti top 1 FAIL (final belum diskor).
+- v2.6 (simetris): eksperimen nyata -0.006 di BT2b/BT3, nol regresi — di bawah ambang terima 0.03 → DITOLAK. Devil's advocate: tercile atas memang bias -0.43, tapi memperbaikinya cuma bernilai 0.006 karena trofi-trofi itu loss-nya kecil (0.31 vs 1.06 di tercile bawah); tuas median sudah jenuh — sisa loss terkonsentrasi di peloncat awal yang tidak dijelaskan sinyal dilusi.
+- Headline: TIDAK LEBIH TINGGI DARI TOP LEADER (final). Verdict: HELD, kandidat tetap v2.5, JANGAN submit tanpa kata Bos.
+
+## Status 21 Nov ~17:00 WIB
+- HELD. Kandidat v2.5 @ 365c5f3, bundle + check lokal lolos (bundle 5d2e7c19; log commit eb1a674 sesudahnya hanya ubah log — kode identik 365c5f3). JANGAN submit tanpa kata "submit" dari Bos.
+- Deadline entri 21 Nov 18:30 WIB (~1,5 jam lagi). Kalau Bos memerintahkan submit: (1) unduh kit level 33 + bundle + check ulang; (2) cek kuota segar; (3) submit via kit CLI sebelum 18:30 WIB.
