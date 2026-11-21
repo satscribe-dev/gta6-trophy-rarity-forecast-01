@@ -107,3 +107,15 @@ Riset: ~/workspace/makefun/gta6-trophy-rarity-forecast-01-research/ (NOTES.md, s
 ## Status 21 Nov ~17:10 WIB
 - HELD. Kandidat v2.5 @ HEAD (commit berikut, setelah commit ini). JANGAN submit tanpa kata "submit" dari Bos.
 - Deadline entri 21 Nov 18:30 WIB (~1,5 jam lagi). Yang tersisa sebelum submit (kalau Bos memerintahkan): (1) bundle + check ulang lawan HEAD v2.5 (kit segar level 32); (2) cek kuota/can_submit segar.
+
+## Bundle + check v2.5 (chat ini, 21 Nov ~17:45 WIB, lawan HEAD 365c5f3)
+- Prompt-file direkonstruksi dari sesi monitor b9c752fd (bagian [BODY] persis, 5.450 B — cocok dengan catatan bundle sebelumnya) — disimpan permanen di ~/workspace/makefun/prompt-gta6-trophy-rarity-forecast-01.txt (bundle /tmp lama HILANG karena /tmp dibersihkan). Bundle baru juga disimpan permanen (bukan /tmp).
+- Usage: ~/.makefun/muse-usage-gta6-trophy-rarity-forecast-01.jsonl — 410 baris (403 lama + 7 baris baru chat ini dari muse.db; baris turn v2.5 yang masih jalan belum tercatat di db saat bundle — sama statusnya seperti worker 0 baris: warning saja).
+- Bundle: ~/workspace/makefun/gta6-trophy-rarity-forecast-01-bundle/transcripts.tar.gz — 14.668.746 B, sha256 5d2e7c19e11730c8d46d172df9ccb0fb46a1b4fe16aca5c9e25398c22a2e4ae9, lawan HEAD 365c5f3. Sesi: b9c752fd (26 turns, 81 baris, 1 usage), 3ce9cc67 (56 turns, 174 baris, 0 usage — warning saja), 1b6b64d8 (179 turns, 601 baris, 9 usage), f77570dc (1962 turns, 6987 baris, 400 usage). Prompt scheduled + via monitor 19 Nov, system prompt uploaded, AGENTS.md terkumpul, MCP none.
+- Check lokal kit (level 32): **15 passed, 0 failed, 6 skipped, 3 checked at submission.** transcripts_run_record PASS, thinking_reproduces 98,7% (489/495 baris — kode v2.5 terwakili), thinking_priced 410 baris, thinking_revised PASS, thinking_in_window PASS, thinking_fresh SKIP (catatan saja: 57,4% baris kredit dari sesi ber-anchor; bukan penolakan). Check lokal TIDAK membuktikan vonis server atas rantai parent (pelajaran news18 v5).
+- CATATAN KIT: situs sekarang level 33, kit ini level 32 — SEBELUM submit, unduh ulang kit level 33 + bundle + check ulang (aturan #12b).
+- Kuota segar (status --competition, 21 Nov ~18:00 WIB): entries_made 0, **can_submit TRUE**, day cap 6/6 (reset 22 Nov 00:00Z), hard limit 40/40. TIDAK submit — menunggu kata Bos + bukti top 1 final (tetap FAIL).
+
+## Status 21 Nov ~18:10 WIB
+- HELD. Kandidat v2.5 @ 365c5f3, bundle + check lokal lolos. JANGAN submit tanpa kata "submit" dari Bos.
+- Deadline entri 21 Nov 18:30 WIB (~20 menit lagi). Kalau Bos memerintahkan submit: (1) unduh kit level 33 + bundle + check ulang; (2) cek kuota segar; (3) submit via kit CLI sebelum 18:30 WIB.
