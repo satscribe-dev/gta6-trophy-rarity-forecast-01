@@ -16,6 +16,12 @@ Approach (written from scratch for this competition):
     capped at 1.5 logit, scaled by horizon (the mass needs days to catch
     up), and gated off when the case shows no net dilution, so it
     self-disables in late-checkpoint regimes where it is unvalidated.
+  * Refresh-probability spread (v2.9): a refresh is an event in time, so
+    the refresh-jump part of the spread scales with P(at least one refresh
+    inside the horizon) = 1 - exp(-horizon/18h); ~0.11 at a 2 h horizon,
+    ~0.89 at 39 h, ~1.0 at 4.5 days. The old constant jump term made the
+    model carry a full refresh jump even over horizons that almost surely
+    contain no refresh (the BT2a trap: 0.197 vs baseline 0.029).
   * If history holds a single distinct snapshot (flat page, no refresh seen
     yet), fall back to a dilution model: Exophase's tracked-player count
     grows roughly like (1 + t), so while no new earners are observed the
@@ -67,6 +73,19 @@ SLOPE_SE_2PT = 0.60    # default slope s.e. when only 2 snapshots exist
                        # is unknown, not infinite: keep per-trophy signal)
 RESID_FLOOR = 0.15     # floor on per-trophy residual sd (logit)
 RESID_CAP = 0.80
+TAU_REFRESH_H = 18.0  # mean inter-refresh time (hours) -- v2.9.
+                       # Distinct-snapshot gaps observed: launch->04:30Z 4.5 h,
+                       # 04:30Z->15:12Z 10.7 h, 15:12Z->06:19Z next day ~39 h;
+                       # mean ~18 h. A refresh is a Poisson-ish event in time:
+                       # P(at least one refresh inside the horizon) =
+                       # 1 - exp(-horizon / TAU). The old s_ref = 0.7*jump
+                       # assumed a refresh-sized jump is equally likely at ANY
+                       # horizon -- false, and it is the root of the BT2a trap
+                       # (2 h horizon, P~0.11, yet the spread carries a full
+                       # refresh jump). Scaling s_ref by P fixes the horizon
+                       # dependence: ~0 at 2 h, ~0.89 at 39 h, ~1.0 at 4.5 d.
+                       # Median untouched; this is a spread-model change, not
+                       # a median change (different direction from v2.6-v2.8).
 JUMP_CAP = 1.0       # cap on the per-refresh jump used for the spread: the
                      # launch-night explosion jump (~2.9 logit) was a one-off
                      # tracked-count explosion; once N growth has slowed, a
@@ -244,6 +263,9 @@ def forecast_case(case):
             if r0 is not None and r1 is not None:
                 jumps.append(abs(logit(r1) - logit(r0)))
     jump = min(median(jumps), JUMP_CAP) if jumps else 0.30
+    # Probability at least one Exophase refresh lands inside the
+    # horizon -- the refresh-jump part of the spread scales with it (v2.9).
+    p_refresh = 1.0 - math.exp(-(horizon_days * 24.0) / TAU_REFRESH_H)
 
     fits = []  # per trophy: (b, se_b, resid, y_last, u_wmean, y_wmean, npts, u_range)
     slopes = []
@@ -317,7 +339,7 @@ def forecast_case(case):
             s_res = clamp(resid if resid > 0 else pooled_resid,
                           RESID_FLOOR, RESID_CAP)
             s_slope = (se_b * abs(du)) if se_b < 1e8 else 0.8 * abs(du)
-            s_ref = 0.7 * jump
+            s_ref = 0.7 * jump * p_refresh
             n_last = snaps[-1][1]
             if n_last:
                 e_last = max(r_last * n_last / 100.0, 1.0)

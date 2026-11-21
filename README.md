@@ -43,6 +43,14 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
    4.5 d), and gated off when the case shows no net dilution — so it
    self-disables in late-checkpoint regimes where it is unvalidated, and in
    SIMFINAL (all dilutions < 0 there).
+   **Refresh-probability spread (v2.9):** a refresh is an event in time, so
+   the refresh-jump part of the spread scales with P(at least one refresh
+   inside the horizon) = 1 - exp(-horizon / 18 h), where 18 h is the mean
+   inter-refresh gap observed (4.5 h, 10.7 h, ~39 h). P ~ 0.11 at 2 h, ~0.89
+   at 39 h, ~1.0 at 4.5 days. This is the Croston decomposition for
+   intermittent processes — occurrence probability times conditional size —
+   applied to the spread: the old constant jump term carried a full refresh
+   jump even over horizons that almost surely contain no refresh.
 3. **Flat history (1 snapshot):** dilution model. The tracked count grows
    roughly like (1 + t), so with no new earners observed the rate is expected
    to fall by that growth factor; spread is widened because the next refresh
@@ -75,21 +83,23 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
   vs the starter's ~1.69 (RULES states the starter scores ~1.51 on the real
   practice). That estimate is assumption-driven, not measured.
 - **Backtest BT2a** (multi-snapshot fitter, snapshot 1 -> live snapshot 17:13Z,
-  121 min, NO refresh in between — the page was frozen): v2.5 **loss 0.197**
-  vs house baseline **0.029** and persistence 0.000. Still loses: when nothing
-  changes, any honest spread pays pinball and persistence wins by construction.
-  The fixes halved the damage (v2.1: 0.404 -> v2.2 cap: 0.204); the remainder
-  is the insurance cost of a spread that pays off when a refresh DOES hit
-  (see BT1: narrow-spread persistence scores 2.366 there). Chasing BT2a to
-  0.029 would mean betting the final has no refreshes — contradicted by the
-  refreshes at 04:30Z and pre-15:12Z — so no further BT2a-targeted tweak.
+  121 min, NO refresh in between — the page was frozen): v2.9 **loss 0.133**
+  vs v2.5 0.197, house baseline **0.029** and persistence 0.000. The v2.9
+  refresh-probability spread cuts a third of the trap: a 2 h horizon almost
+  surely contains no refresh (P ~ 0.11), so the spread no longer carries a
+  full refresh jump there. Still loses to persistence by construction (when
+  nothing changes, any honest spread pays pinball) — but the gap to the
+  baseline is now 0.104 instead of 0.168, and the fix costs ~0.001 on the
+  long-horizon cases below, where refreshes DO happen.
 - **Backtest BT2b + BT3 (REAL long-horizon, the closest thing to the final):**
   live snapshot 21 Nov 06:19Z (first refresh since 15:12Z 19 Nov — Ch1
   0.73->18.02%, Beat Cal 1.89->16.73%, Breakfast Run 0.24->7.98%; N fitted
   ~1M). BT2b = checkpoint 15:12Z, horizon 39.1 h; BT3 = checkpoint 17:13Z,
   horizon 37.1 h; history = launch + snapshot 1 (+ snapshot 17:13Z, identical
-  rates). **v2.5: BT2b 0.569 / BT3 0.571** vs house baseline 0.830/0.837,
-  house curve 0.714/0.731, persistence 1.201. v2.5 beats the baseline AND the
+  rates). **v2.9: BT2b 0.570 / BT3 0.573** (v2.5: 0.569/0.571 — the v2.9 change
+  costs ~0.001 here, inside noise: at a 39 h horizon P(refresh) ~ 0.89, so
+  the spread is nearly unchanged) vs house baseline 0.830/0.837,
+  house curve 0.714/0.731, persistence 1.201. v2.9 beats the baseline AND the
   house curve on both (v2.4: 0.721/0.721 — tied the curve on BT2b; v2.1:
   0.697). The gain comes from the v2.5 catch-up correction: BT2b loss
   decomposition showed the top-10 loss was all huge positive median misses
@@ -104,7 +114,8 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
   moves best) — the JUMP_CAP costs ~0.024 here but buys 0.20 on BT2a and is
   neutral on SIMFINAL; kept.
 - **Simulation SIMFINAL** (structural, final shape: cut t=48 h, target t=168 h,
-  13 refresh snapshots, rates from an earner-growth model): **mine v2.5 0.118**
+  13 refresh snapshots, rates from an earner-growth model): **mine v2.9 0.118**
+  (v2.5: 0.118 — unchanged: at a 168 h horizon P(refresh) ~ 1.0)
   vs house curve 0.293 vs house baseline 0.403 vs persistence 0.759
   (v2.2: 0.145; v2: 0.145; v1 LOST at 0.385). Dropping the launch snapshot from
   the fit (when history is rich) cut typical miss 1.91 -> 1.07 pp. The sim's
