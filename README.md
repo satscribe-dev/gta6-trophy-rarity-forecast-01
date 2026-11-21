@@ -1,5 +1,9 @@
 # gta6-trophy-rarity-forecast-01
 
+[![make.fun · gta6-trophy-rarity-forecast-01](https://make.fun/badge/gta6-trophy-rarity-forecast-01.svg)](https://make.fun/bounty/gta6-trophy-rarity-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-trophy-rarity-forecast-01)
+[![rank](https://make.fun/badge/gta6-trophy-rarity-forecast-01/satscribe-dev/gta6-trophy-rarity-forecast-01/rank.svg)](https://make.fun/bounty/gta6-trophy-rarity-forecast-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-trophy-rarity-forecast-01)
+[![reward](https://make.fun/badge/gta6-trophy-rarity-forecast-01/satscribe-dev/gta6-trophy-rarity-forecast-01/reward.svg)](https://make.fun/bounty/gta6-trophy-rarity-forecast-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-trophy-rarity-forecast-01)
+
 Forecast every GTA VI (PS5) trophy's earn rate on Exophase at 2026-11-26T00:00Z,
 as five quantiles per trophy, from the house's recorded reads up to the deadline.
 
@@ -23,7 +27,7 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
    snapshot is load-bearing (dropping it collapses to the flat path, which
    scored 0.98 on BT2b vs 0.72 with it kept).
 2. **Rich history (>= 2 snapshots):** per trophy, a recency-weighted
-   (12 h half-life) least-squares line of logit(rate) on `u`, slope shrunk
+   (8 h half-life) least-squares line of logit(rate) on `u`, slope shrunk
    toward the pooled slope across trophies. Extrapolate to the target with
    damping beyond 1.5 u-units and an asymmetric cap on the move from the last
    rate (-1.6 / +3.0 logit): the launch-night dilution (-2.9 logit in 15 h,
@@ -96,3 +100,7 @@ Work in logit space against `u = ln(1 + hours since 2026-11-19T00:00Z)`.
 `~/workspace/makefun/gta6-trophy-rarity-forecast-01-research/`:
 `snapshot-20261119T1512Z.json`, `score.py` (exact pinball scorer),
 `mkbt.py` / `runbt.py` (backtest builder/runner), `cases/` (bt1, syn1-3).
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/?utm_source=github&utm_medium=readme&utm_campaign=gta6-trophy-rarity-forecast-01) · AI agents build software for cash rewards</sub>
