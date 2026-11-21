@@ -158,3 +158,24 @@ Riset: ~/workspace/makefun/gta6-trophy-rarity-forecast-01-research/ (NOTES.md, s
 - HELD. Kandidat v2.5 @ 365c5f3, bundle + check lokal lolos (bundle 5d2e7c19; log commit 534fcf0 sesudahnya hanya ubah log — kode identik 365c5f3). JANGAN submit tanpa kata "submit" dari Bos.
 - Dua ronde tweak berturut-turut (v2.6, v2.7) menghasilkan perbaikan kecil positif tapi di bawah ambang — keluarga sinyal dilusi/slope sudah jenuh pada resolusi ini; tidak ada sumbu tervalidasi lain dari data yang ada. Yang bisa mengubah keadaan: refresh Exophase baru (belum ada sampai 17:00 WIB) atau perintah submit Bos.
 - Deadline entri 21 Nov 18:30 WIB (~1 jam lagi). Kalau Bos memerintahkan submit: (1) unduh kit level 33 + bundle + check ulang; (2) cek kuota segar; (3) submit via kit CLI sebelum 18:30 WIB.
+
+## KOREKSI RINGKASAN (cmd 12-14, dicatat 21 Nov ~17:05 WIB)
+- Ringkasan perintah dashboard untuk cmd 12-14 menulis v2.7 "malah memperburuk: BT2b 0.569 -> 0.550" — itu TERBALIK. Loss pinball makin kecil = makin baik, jadi 0.550 adalah PERBAIKAN (-0.019), bukan perburukan. BT3 juga membaik (0.5714 -> 0.5524). v2.7 ditolak HANYA karena -0.019 < ambang terima pra-registrasi 0.03, bukan karena memburuk. Angka di log ini yang benar; ringkasan cron salah baca arah.
+
+## v2.8 — kuantil asimetris, DITOLAK (chat ini, perintah dashboard Bos cmd 15, 17:02 WIB)
+- Aturan dibaca ulang, lanjut dari Status 21 Nov ~17:30 WIB.
+- Arah BARU (bukan median — perintah cmd 15 melarang ulang arah shrinkage/catch-up): bentuk distribusi prediktif. Bukti: residu BT2b condong kanan (tercile bawah +1.60, atas -0.43; miss positif terbesar +2.5..+3.5) — kuantil normal simetris salah spesifikasi: buang massa di bawah median (jawaban jarang ke sana) dan kelaparan ekor atas (jawaban sering ke sana).
+- EKSPERIMEN NYATA v2.8 (SATU perubahan: di rich path saja, kuantil atas pakai spread x1.5, kuantil bawah x0.75 — asimetri 2:1 dipilih a priori dari rasio ekor terukur ~2-4:1, tanpa grid search; median TAK berubah. Flat path tetap simetris — residunya condong ke arah BERLAWANAN (jawaban di bawah median dilusi di BT1) — jadi perbaikan bentuk dibatasi ke rezim tempat skew-nya diukur. File ~/workspace/makefun/scratch/main_v28_asym.py): BT1 0.3243 tetap, BT2a 0.1974 -> 0.2212 (+0.024), BT2b 0.5690 -> 0.5548 (-0.014), BT3 0.5714 -> 0.5564 (-0.015), SIMFINAL 0.1179 -> 0.1323 (+0.014), practice byte-identik. Coverage BT2b/BT3 0.73 -> 0.80 (ekor atas lebih lebar memang menutup lebih banyak jawaban) — tapi pinball cuma membaik sedikit: melebarkan ekor atas dibayar di q75/q95 saat jawaban di bawahnya, dan median (masalah utama) tidak tersentuh.
+- Aturan terima pra-registrasi (sama seperti ronde v2.5-v2.7): BT2b >=0.03 DAN BT3 >=0.03 DAN SIMFINAL regresi <=0.02 DAN BT1 tetap DAN BT2a regresi <=0.02. Hasil: -0.014 < 0.03 DAN BT2a +0.024 > 0.02 → **DITOLAK dua alasan, TIDAK DI-COMMIT** (#32b). Kandidat tetap v2.5 @ 365c5f3.
+- Pola tiga ronde berturut-turut: v2.6 -0.006, v2.7 -0.019, v2.8 -0.014 (plus guard fail) — semua perbaikan kecil, semua di bawah ambang. Median adalah tuasnya; perubahan bentuk saja tidak cukup. Tidak ada sumbu tervalidasi lain dari data yang ada (2 snapshot distinct, 1 event jawaban).
+- Kuota segar (status --competition, 21 Nov ~17:15 WIB): entries_made 0, **can_submit TRUE**, day cap 6/6 (reset 22 Nov 00:00Z), hard limit 40/40. Kit level 32 vs situs 33 — sebelum submit wajib kit 33 + bundle + check ulang (#12b). TIDAK submit.
+
+## Judge lokal kejam — update pasca-v2.8 (skill sama)
+- Binary: format+determinisme PASS | BT1 PASS | SIMFINAL PASS (v2.5; v2.8 malah regresi +0.014) | BT2b/BT3 PASS vs baseline DAN house curve (v2.5) | BT2a FAIL (setting jebakan; v2.8 makin jauh) | bukti top 1 FAIL (final belum diskor).
+- v2.8 (kuantil asimetris): -0.014/-0.015 di BT2b/BT3, BT2a +0.024 (gagal guard) → DITOLAK. Devil's advocate: coverage naik 0.73->0.80 itu perbaikan nyata dalam kalibrasi — tapi pinball (metrik bounty) menghukum lebar ekor atas saat jawaban di bawahnya; kalibrasi yang lebih baik tidak sama dengan skor yang lebih baik. Headline tetap: median yang harus diperbaiki, dan semua tuas median yang terukur sudah jenuh.
+- Headline: TIDAK LEBIH TINGGI DARI TOP LEADER (final). Verdict: HELD, kandidat tetap v2.5, JANGAN submit tanpa kata Bos.
+
+## Status 21 Nov ~17:20 WIB
+- HELD. Kandidat v2.5 @ 365c5f3, bundle + check lokal lolos (bundle 5d2e7c19; log commit e3fa74f sesudahnya hanya ubah log — kode identik 365c5f3). JANGAN submit tanpa kata "submit" dari Bos.
+- Tiga ronde tweak berturut-turut ditolak (v2.6 -0.006, v2.7 -0.019, v2.8 -0.014 + guard fail) — semua arah yang terukur dari data yang ada sudah dicoba. Yang bisa mengubah keadaan: refresh Exophase baru atau perintah submit Bos.
+- Deadline entri 21 Nov 18:30 WIB (~1 jam lagi). Kalau Bos memerintahkan submit: (1) unduh kit level 33 + bundle + check ulang; (2) cek kuota segar; (3) submit via kit CLI sebelum 18:30 WIB.
