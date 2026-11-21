@@ -82,3 +82,28 @@ Riset: ~/workspace/makefun/gta6-trophy-rarity-forecast-01-research/ (NOTES.md, s
 ## Status 21 Nov ~14:55 WIB
 - HELD. Kandidat v2.4 @ 01b2efa (bundle + check lokal lolos). JANGAN submit tanpa kata "submit" dari Bos.
 - Deadline entri 21 Nov 18:30 WIB (~3,5 jam lagi). Yang tersisa sebelum submit (kalau Bos memerintahkan): (1) unduh kit level 32 + bundle + check ulang; (2) commit log ini + bundle ulang lawan HEAD baru + check ulang.
+
+## Kit segar per #12b (refresh panel, 21 Nov 14:44 WIB)
+- Kit diunduh segar dari https://make.fun/c/gta6-trophy-rarity-forecast-01/kit -> level 32 (build 245078bb384c), waktu unduh 21 Nov 14:41 WIB. Kit lama level 27 (kit bersarang) dibackup sebagai gta6-trophy-rarity-forecast-01-kit-level27-bak.
+- Status dari kit segar: entries_made 0, can_submit yes.
+- 2026-11-21 15:31 WIB — refresh panel: kit level 32 (build 245078bb384c), tidak ada unduh ulang; API+CLI OK, panel tidak berubah.
+- 2026-11-21 15:31 WIB — refresh panel: TOP 1 BERUBAH oven-den → eager-pika-22 (skor seri 1e-06, terverifikasi 2x fetch); panel diupdate + catatanStatus ditambah baris Top 1 berubah.
+
+## v2.5 — catch-up correction (chat ini, perintah dashboard Bos cmd 10, 16:29 WIB "Tweakk yang bener suuu asuuu")
+- Riset dulu (aturan #29): reproduksi v2.4 di semua case — BT1 0.3243 / BT2a 0.2036 / BT2b 0.7213 / BT3 0.7213 / SIMFINAL 0.1179, practice byte-identik. Lalu diagnosa per-trofi BT2b: top-10 loss SEMUANYA miss median positif +1.4..+4.3 logit (model prediksi TURUN, jawaban NAIK besar: Ch1 0.73->18.02% vs q50 0.36%); top-5 = 37% total loss, top-10 = 58%; median |miss| 0.74 vs median spread 0.89; 17/55 trofi |miss| > spread. Kontrafaktual: median sempurna + spread sekarang -> 0.159; spread x1.5 -> 0.662; spread x2.0 -> 0.654. KESIMPULAN: tuasnya MEDIAN, bukan spread.
+- Sinyal (diukur, bukan tebak): corr(dilusi launch->checkpoint, kenaikan checkpoint->jawaban) = **-0.69** di BT2b/BT3. Trofi yang paling SEDIKIT terdilusi (mass hampir menyusul) adalah yang paling besar naiknya; yang paling terdilusi terus jatuh. Rata-rata kenaikan: separuh atas dilusi -1.05 logit, separuh bawah +0.87. Mekanisme: rate launch = pemain hardcore (N=638); rate checkpoint = massa (N=30k); selisihnya = jarak massa vs hardcore — jarak kecil = trofi awal/mudah yang massa segera raih.
+- Tweak (SATU perubahan struktural): koreksi catch-up pada median — adj = K * max(D_MED - d_i, 0) * horizon_days/(horizon_days+1), d_i = logit(rate pertama) - logit(rate terakhir), D_MED = median d_i, satu arah (naik saja), cap 1.5 logit. Gate: hanya kalau D_MED > 0 (kasus masih menunjukkan dilusi netto); kalau tidak, koreksi MATI SENDIRI — jadi di SIMFINAL (semua d < 0) tidak berpengaruh, dan di checkpoint akhir (massa sudah menyusul) kembali ke v2.4.
+- Aturan terima pra-registrasi: BT2b naik >=0.03 DAN BT3 naik >=0.03 DAN SIMFINAL regresi <=0.02 DAN BT1 tetap DAN BT2a regresi <=0.02.
+- K=0.5: BT2b 0.721->0.638, BT3 0.721->0.639, BT2a 0.204->0.200, BT1 tetap 0.324, SIMFINAL tetap 0.118. LULUS.
+- K=1.0 (diuji karena K=0.5 lulus + masih ada headroom; ambang pindah: naik lagi >=0.03 tanpa regresi guard): BT2b **0.569**, BT3 **0.571**, BT2a 0.197, BT1 tetap, SIMFINAL tetap. LULUS, diambil sebagai v2.5. K=1.5 TIDAK diuji: sudah mendekati slope regresi terukur (~1.15) dan cap 1.5 logit sudah mengikat trofi ekstrem — menaikkan lagi = tuning ke satu event.
+- v2.5 sekarang MENGALAHKAN house curve di BT2b (0.569 vs 0.714) dan BT3 (0.571 vs 0.731), dan baseline (0.830/0.837). Coverage BT2b 0.69->0.73.
+- BATASAN JUJUR: (1) BT2b/BT3 berbagi SATU jawaban (satu refresh 06:19Z) — K dituning ke satu event; (2) koreksi TIDAK tervalidasi di checkpoint akhir (~35 jam, seperti final) — gate D_MED>0 adalah pengaman, bukan bukti; kalau di final D_MED <= 0, v2.5 berperilaku persis v2.4; (3) bar sesungguhnya tetap house model forecast server-side — bukti top 1 final tetap FAIL.
+
+## Judge lokal kejam — update pasca-v2.5 (skill sama)
+- Binary: format+determinisme PASS | BT1 PASS | SIMFINAL PASS | BT2b/BT3 PASS vs baseline DAN vs house curve (pertama kali mengalahkan house curve di data horizon panjang nyata) | BT2a FAIL (0.197 vs baseline 0.029 — setting jebakan, tetap tidak dikejar) | bukti top 1 FAIL (final belum diskor; bar = house model forecast 21 Nov 09:30Z, server-side).
+- Devil's advocate: semua gain BT2b/BT3 datang dari SATU refresh; K=1.0 dipilih di event yang sama dengan yang diukur — ada risiko overfit ke refresh itu; house model forecast (superbot, effort max) tetap tidak terukur dan bisa jadi memakai sinyal yang sama dengan lebih baik. Headline: LEBIH BAIK DARI v2.4 DAN DARI HOUSE CURVE DI BACKTEST — tapi BUKTI TOP 1 FINAL tetap FAIL (final belum diskor).
+- Headline: TIDAK LEBIH TINGGI DARI TOP LEADER (final). Verdict: HELD, JANGAN submit tanpa kata Bos.
+
+## Status 21 Nov ~17:10 WIB
+- HELD. Kandidat v2.5 @ HEAD (commit berikut, setelah commit ini). JANGAN submit tanpa kata "submit" dari Bos.
+- Deadline entri 21 Nov 18:30 WIB (~1,5 jam lagi). Yang tersisa sebelum submit (kalau Bos memerintahkan): (1) bundle + check ulang lawan HEAD v2.5 (kit segar level 32); (2) cek kuota/can_submit segar.

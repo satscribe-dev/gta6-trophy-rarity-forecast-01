@@ -7,6 +7,15 @@ Approach (written from scratch for this competition):
     Per trophy, a recency-weighted least-squares line of logit(rate) on u,
     slope shrunk toward the pooled slope across trophies; extrapolate the
     line to the target, with the total move capped.
+  * Catch-up correction (v2.5): the line, fitted on dilution, extrapolates
+    every trophy DOWN, but trophies the tracked mass has nearly caught up
+    on -- small dilution from the first snapshot to the last -- are the ones
+    that explode UP next (BT2b: corr(dilution, future rise) = -0.69; the
+    top-10 loss is all +1.4..+4.3 logit misses on low-dilution trophies).
+    The median is pushed up for below-median-dilution trophies, one-sided,
+    capped at 1.5 logit, scaled by horizon (the mass needs days to catch
+    up), and gated off when the case shows no net dilution, so it
+    self-disables in late-checkpoint regimes where it is unvalidated.
   * If history holds a single distinct snapshot (flat page, no refresh seen
     yet), fall back to a dilution model: Exophase's tracked-player count
     grows roughly like (1 + t), so while no new earners are observed the
@@ -62,6 +71,18 @@ JUMP_CAP = 1.0       # cap on the per-refresh jump used for the spread: the
                      # launch-night explosion jump (~2.9 logit) was a one-off
                      # tracked-count explosion; once N growth has slowed, a
                      # single refresh cannot plausibly move rates that far
+CATCHUP_K = 1.0
+                     # caught up on (small launch->last dilution) are the
+                     # ones that explode upward next; the WLS line, fitted
+                     # on dilution, extrapolates them DOWN. BT2b evidence:
+                     # corr(dilution, future rise) = -0.69; top-10 loss is
+                     # all +1.4..+4.3 logit misses on low-dilution trophies.
+                     # The correction is one-sided (up only), capped, scaled
+                     # by horizon (mass needs days to catch up), and gated
+                     # off when the case shows no net dilution (D_MED <= 0),
+                     # so it self-disables in late-checkpoint regimes where
+                     # it is unvalidated (and in SIMFINAL, where all d < 0).
+CATCHUP_CAP = 1.5    # cap on the catch-up adjustment (logit)
 SPREAD_FLOOR = 0.45    # floor on total predictive spread (logit)
 SPREAD_CAP = 2.20
 FLAT_SPREAD = 0.60     # spread when history is a single snapshot
@@ -160,6 +181,11 @@ def forecast_case(case):
     u_target = math.log1p(target_t)
     horizon_days = case["horizon_minutes"] / 1440.0
     snaps = distinct_snapshots(case)
+    # Catch-up signal (v2.5): dilution from the FIRST snapshot to the last,
+    # per trophy. d_i > 0 means the trophy diluted as the tracked mass
+    # flooded in; small d means the mass nearly caught up already. Taken
+    # BEFORE the v2.4 drop, so the launch snapshot still informs it.
+    first_rates = list(snaps[0][2]) if snaps else [None] * n_tr
     # Drop the launch-night snapshot, but ONLY when enough snapshots
     # remain (>= 3) to still identify a trend. Its rates are a different
     # regime (N=638 early players, pre-dilution); the jump to the first
@@ -170,6 +196,14 @@ def forecast_case(case):
     if len(snaps) >= 4:
         snaps = snaps[1:]
     last_rates = list(snaps[-1][2]) if snaps else [None] * n_tr
+    # Median dilution across trophies; the catch-up correction fires only
+    # when the case as a whole still shows net dilution from the first
+    # snapshot (early-checkpoint regime, where BT2b validates it).
+    _ds = [logit(first_rates[i]) - logit(last_rates[i]) for i in range(n_tr)
+           if first_rates[i] is not None and last_rates[i] is not None]
+    catchup_med = median(_ds) if _ds else 0.0
+    catchup_g = horizon_days / (horizon_days + 1.0)  # ~0 at 2 h, 0.62 at
+    # 39 h, 0.82 at 4.5 d: the mass needs time to catch up
 
     rows = []
     if len(snaps) < 2:
@@ -269,6 +303,15 @@ def forecast_case(case):
             move = move / (1.0 + abs(move) / SOFT_CAP_M)
             y_hat = y_last + clamp(move, -MAX_MOVE_DOWN, MAX_MOVE_UP)
             med_logit = clamp(y_hat, LOGIT_MIN, LOGIT_MAX)
+            # v2.5 catch-up: push the median up for trophies whose dilution
+            # is below the case median (mass nearly caught up -> about to
+            # explode upward); one-sided, capped, horizon-scaled, gated.
+            if catchup_med > 0.0 and first_rates[i] is not None:
+                d_i = logit(first_rates[i]) - y_last
+                adj = CATCHUP_K * max(catchup_med - d_i, 0.0) * catchup_g
+                if adj > 0.0:
+                    med_logit = clamp(med_logit + min(adj, CATCHUP_CAP),
+                                      LOGIT_MIN, LOGIT_MAX)
             # predictive spread: fit residual + slope uncertainty over the
             # extrapolation + one refresh jump + small-count noise
             s_res = clamp(resid if resid > 0 else pooled_resid,
