@@ -22,6 +22,15 @@ Approach (written from scratch for this competition):
     ~0.89 at 39 h, ~1.0 at 4.5 days. The old constant jump term made the
     model carry a full refresh jump even over horizons that almost surely
     contain no refresh (the BT2a trap: 0.197 vs baseline 0.029).
+  * Heteroscedastic spread (v2.10): the dilution signal predicts the future
+    VOLATILITY as well as the level (NGBoost/GAMLSS structure: mu(x) and
+    sigma(x) both depend on the covariate; homoscedasticity is a strong
+    assumption the data rejects). The predictive spread is modulated per
+    trophy by exp(-0.40 x (d_i - median d)): trophies that diluted least
+    (the future jumpers, BT2b mean signed miss +1.60 logit) get a wider
+    spread, the biggest diluters (mean miss -0.43) a narrower one; factor
+    1.0 at the median dilution. Same catchup_med > 0 gate as the catch-up,
+    rich path only.
   * If history holds a single distinct snapshot (flat page, no refresh seen
     yet), fall back to a dilution model: Exophase's tracked-player count
     grows roughly like (1 + t), so while no new earners are observed the
@@ -74,6 +83,24 @@ SLOPE_SE_2PT = 0.60    # default slope s.e. when only 2 snapshots exist
 RESID_FLOOR = 0.15     # floor on per-trophy residual sd (logit)
 RESID_CAP = 0.80
 TAU_REFRESH_H = 18.0  # mean inter-refresh time (hours) -- v2.9.
+HET_GAMMA = 0.40   # heteroscedastic spread by dilution -- v2.10.
+                   # The dilution signal predicts not only the future LEVEL
+                   # (v2.5 catch-up) but the future VOLATILITY: BT2b
+                   # low-dilution tercile mean signed miss +1.60 logit
+                   # (mean loss 1.06) vs high-dilution tercile -0.43 (loss
+                   # 0.31). A single pooled spread misprices both. So the
+                   # spread is modulated per trophy: spread x
+                   # exp(-GAMMA x (d_i - catchup_med)) -- low dilution (d below
+                   # the median) gets a wider spread, high dilution a
+                   # narrower one; factor 1.0 at the median dilution.
+                   # GAMMA = 0.40 chosen a priori (mild: a 1-logit dilution
+                   # gap changes spread ~1.5x), NO grid search. Gated off
+                   # with the catch-up when catchup_med <= 0 (signal unvalidated
+                   # there), so SIMFINAL is inert. Rich path only -- the
+                   # flat path keeps its own spread. This is the NGBoost /
+                   # GAMLSS structure: mu(x) and sigma(x) both depend on
+                   # the covariate; homoscedasticity is a strong assumption
+                   # the data rejects here.
                        # Distinct-snapshot gaps observed: launch->04:30Z 4.5 h,
                        # 04:30Z->15:12Z 10.7 h, 15:12Z->06:19Z next day ~39 h;
                        # mean ~18 h. A refresh is a Poisson-ish event in time:
@@ -98,7 +125,7 @@ CATCHUP_K = 1.0
                      # all +1.4..+4.3 logit misses on low-dilution trophies.
                      # The correction is one-sided (up only), capped, scaled
                      # by horizon (mass needs days to catch up), and gated
-                     # off when the case shows no net dilution (D_MED <= 0),
+                     # off when the case shows no net dilution (catchup_med <= 0),
                      # so it self-disables in late-checkpoint regimes where
                      # it is unvalidated (and in SIMFINAL, where all d < 0).
 CATCHUP_CAP = 1.5    # cap on the catch-up adjustment (logit)
@@ -348,6 +375,14 @@ def forecast_case(case):
                 s_cnt = 0.25
             spread = math.sqrt(s_res * s_res + s_slope * s_slope
                                + s_ref * s_ref + s_cnt * s_cnt)
+            # v2.10: heteroscedastic spread -- dilution predicts volatility.
+            # Same gate as the catch-up (only when the case shows net
+            # dilution); d_i is the trophy's dilution from the first
+            # snapshot to the last, catchup_med its case median -- both
+            # computed before the v2.4 drop.
+            if catchup_med > 0.0 and first_rates[i] is not None:
+                d_i = logit(first_rates[i]) - y_last
+                spread = spread * math.exp(-HET_GAMMA * (d_i - catchup_med))
             spread = clamp(spread, SPREAD_FLOOR, SPREAD_CAP)
         q = [round4(clamp(inv_logit(med_logit + z * spread), 0.0, 100.0))
              for z in Z]
