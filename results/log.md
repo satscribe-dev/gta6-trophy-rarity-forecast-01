@@ -52,3 +52,33 @@ Riset: ~/workspace/makefun/gta6-trophy-rarity-forecast-01-research/ (NOTES.md, s
 - Binary: format+determinisme PASS | BT1 PASS (0.324 < 2.366) | SIMFINAL PASS (0.118 < 0.293) | BT2a FAIL (0.175 > 0.029) | bukti top 1 FAIL (final belum diskor; bar = house model forecast 21 Nov 09:30Z).
 - Devil's advocate: baseline tetap menang BT2a 6x; house model forecast (superbot, effort max, 2 hari data penuh) adalah bar sesungguhnya dan belum ada — mengalahkan 2 baseline di BT1/SIMFINAL itu perlu, bukan cukup.
 - Headline: TIDAK LEBIH TINGGI DARI TOP LEADER. Verdict: HELD, JANGAN submit. Menunggu BT2b (~02:51 WIB) lalu bundle + check di chat ini.
+
+## Worker BT2b — MATI (chat ini, 21 Nov 13:19-13:30 WIB, perintah dashboard Bos 13:14 WIB "MULAI GARAP lagi")
+- Worker 3ce9cc67 TIDAK PERNAH bangun: file sesi terakhir ditulis 19 Nov 15:54 UTC (22:54 WIB), proses sleep 4 jam hilang, 0 baris usage di muse.db, tidak ada snapshot 2 / BT2b / commit baru darinya. Aman lanjut di chat ini; tidak ada duplikat.
+- Snapshot live Exophase 06:19Z 21 Nov (browser.open): refresh PERTAMA sejak 15:12Z 19 Nov — pertumbuhan hari ke-2 nyata: Ch1 0.73->18.02%, Beat Cal 1.89->16.73%, Breakfast Run 0.24->7.98%, fishing 99.99->100.00, platinum 0.03->0.00. Disimpan research/snapshot-20261121T0619Z.json. N tidak teridentifikasi dari rate 2 desimal (semua N >=200k round-trip; hanya 7 trofi lantai 0.00% yang membatasi: tetap 9 earners snap1, tercetak 0.00% di N=1M); N_fit=1.000.000 dipilih sebagai orde besaran bulat; N cuma masuk suku noise small-count jadi pilihannya nyaris tidak menggerakkan skor.
+- BT2b (checkpoint 15:12Z, horizon 2347 mnt / 39,1 jam) + BT3 (checkpoint 17:13Z, horizon 2226 mnt / 37,1 jam); jawaban = snapshot 06:19Z.
+- HASIL — v2.3 REGRESI di data horizon panjang nyata: v2.3 0.978/0.983 (cov 0.47) vs baseline 0.830/0.837, house curve 0.714/0.731, persistence 1.201. v2.2: 0.721/0.721 (cov 0.69). v2.1: 0.697/0.697 (cov 0.78). Akar: dengan 2 snapshot distinct, drop v2.3 menyisakan 1 snapshot -> jalur dilusi datar (semua turun -1,2 logit), fatal saat trofi menyebar (naik vs turun). Spread lebar v2.1 (~2,1) menutupi gerakan besar paling baik; JUMP_CAP merugikan ~0,024 di BT2b tapi menghemat 0,20 di BT2a dan netral di SIMFINAL -> cap dipertahankan.
+
+## v2.4 (chat ini, commit cbb796c, 21 Nov ~13:45 WIB) — KANDIDAT SAAT INI
+- Conditional drop: buang snapshot launch-night HANYA kalau >=3 snapshot tersisa (`if len(snaps) >= 4: snaps = snaps[1:]`).
+- Verifikasi file repo: BT1 0.324, BT2a 0.204, BT2b 0.721, BT3 0.721, SIMFINAL 0.118, practice byte-identik, ~0,05-0,3 dtk. v2.4 mendominasi: mempertahankan gain SIMFINAL, menghilangkan bencana BT2b, mengalahkan baseline di BT2b/BT3 dan house curve di BT3 (seri di BT2b). README diupdate (metode v2.4 + bukti BT2b/BT3).
+
+## Judge lokal kejam — update pasca-v2.4 (skill sama)
+- Binary: format+determinisme PASS | BT1 PASS | SIMFINAL PASS | BT2b/BT3 PASS vs baseline (bukti horizon panjang nyata pertama) | BT2a FAIL (setting jebakan; mengejar 0,029 = bertaruh final tanpa refresh — bertentangan dengan refresh yang teramati) | bukti top 1 FAIL (final belum diskor; bar = house model forecast 21 Nov 09:30Z, server-side, tidak bisa diukur lokal).
+- Headline: TIDAK LEBIH TINGGI DARI TOP LEADER. Verdict: HELD, JANGAN submit.
+
+## README badges + GitHub About (chat ini, 21 Nov ~14:00 WIB, commit 61b72ac, pushed)
+- README: 3 badge live make.fun dari template requirements (competition + rank + reward, owner/repo satscribe-dev/gta6-trophy-rarity-forecast-01, tanpa placeholder; param referral ?ref= dihapus — tidak ada kode referral yang diketahui) + sub-line footer; betulkan "12 h half-life" -> "8 h" (kode HALFLIFE_H = 8.0).
+- GitHub About (gh repo edit, terverifikasi): deskripsi 228 karakter (batas 228 — titik akhir dibuang), homepage https://make.fun/bounty/gta6-trophy-rarity-forecast-01, topics: makefun, ai-agents, bounties, forecasting. gh login sebagai satscribe-dev.
+
+## Bundle + check lokal (chat ini, 21 Nov ~14:20-14:50 WIB)
+- Usage: ~/.makefun/muse-usage-gta6-trophy-rarity-forecast-01.jsonl — 403 baris (400 main chat 20-21 Nov + 2 chat ini + 1 monitor; baris 19 Nov main chat terambil tapi hasil tool-nya tidak tersimpan ke disk, jadi tidak masuk file — syarat agregat >=1 baris terpenuhi berkali-kali lipat; worker 0 baris karena run-nya tidak pernah selesai — kit hanya mencatat warning, bukan gagal).
+- Prompt: /tmp/gta6trophy-bundle/prompt.txt (5.450 B) = bagian [BODY] persis dari pesan pertama sesi monitor b9c752fd (cron 19 Nov 22:07 WIB); origin scheduled; via "makefun-monitor-4h scheduled scan 22:07 WIB 19 Nov 2026 found gta6-trophy-rarity-forecast-01 and spawned the build; bounty chat created on Bos's order".
+- Sesi bundle (--no-discover, eksplisit): b9c752fd (monitor, 26 turns), 3ce9cc67 (worker, 56 turns), 1b6b64d8 (chat ini, 100 turns), f77570dc (main chat, 1644 turns, 5892 baris repo-relevan). Model ipnext/avocado-5.17-v9, harness Muse, provider meta, harness-version 1.3, effort default, MCP none, system prompt uploaded, AGENTS.md terkumpul.
+- Bundle: /tmp/gta6trophy-bundle/transcripts.tar.gz — 11.538.809 byte, sha256 d83125bf52cc408cd4ab06b40cdb3ac3c7bc5d2b707ef962c6b0c6b5205d46e9, lawan HEAD 01b2efa (repo bersih). Catatan: commit log ini (di bawah) mengubah HEAD — bundle HARUS dibuat ulang lawan HEAD baru sebelum submit.
+- Check lokal kit (level 27): 15 passed, 0 failed, 6 skipped, 3 checked at submission. transcripts_run_record PASS, thinking_in_window PASS, thinking_reproduces 99,7% (389/390 baris), thinking_priced 403 baris, thinking_revised PASS. thinking_fresh SKIP (catatan saja, bukan penolakan: 72,2% baris kredit dari sesi yang menampilkan anchor line). Catatan kit: salinan kit ini level 27, situs di level 32 — SEBELUM submit, unduh ulang kit level 32 lalu bundle + check ulang.
+- Kuota segar (makefun status --competition, 21 Nov ~14:50 WIB): entries_made 0, can_submit TRUE, day cap 6/6 tersisa (reset 22 Nov 00:00Z), hard limit 40/40. TIDAK submit — menunggu kata Bos + bukti top 1.
+
+## Status 21 Nov ~14:55 WIB
+- HELD. Kandidat v2.4 @ 01b2efa (bundle + check lokal lolos). JANGAN submit tanpa kata "submit" dari Bos.
+- Deadline entri 21 Nov 18:30 WIB (~3,5 jam lagi). Yang tersisa sebelum submit (kalau Bos memerintahkan): (1) unduh kit level 32 + bundle + check ulang; (2) commit log ini + bundle ulang lawan HEAD baru + check ulang.
